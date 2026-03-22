@@ -133,13 +133,42 @@
 
   .hotspot {
     position: absolute;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(var(--hs-scale, 1));
+    transform-origin: center;
     width: 36px;
     height: 36px;
     cursor: pointer;
     pointer-events: all;
     z-index: 10;
+    transition: opacity 0.2s, transform 0.25s;
   }
+
+  /* Cluster — hidden absorbed dot */
+  .hotspot.cluster-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  /* Cluster representative — dot stays visible, badge overlays it */
+  .hotspot-cluster-badge {
+    display: none;
+    position: absolute;
+    top: -8px; right: -8px;
+    min-width: 16px; height: 16px;
+    background: var(--gold);
+    border-radius: 8px;
+    font-family: var(--serif);
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--ink);
+    padding: 0 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 6px rgba(201,168,76,0.5);
+  }
+  .hotspot.cluster-rep .hotspot-cluster-badge { display: flex; }
 
   .hotspot-ring {
     position: absolute;
@@ -208,22 +237,8 @@
 
   .hotspot:hover .hotspot-tooltip { opacity: 1; }
 
-  /* Hotspot number badge */
-  .hotspot-num {
-    position: absolute;
-    top: -1px; right: -1px;
-    width: 14px; height: 14px;
-    background: var(--ink);
-    border: 1px solid var(--gold-dim);
-    border-radius: 50%;
-    font-family: var(--serif);
-    font-size: 8px;
-    color: var(--gold);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-  }
+  /* Hotspot number badge — hidden */
+  .hotspot-num { display: none; }
 
   /* ── RECTANGLE HOTSPOT (inscription / text panel type) ── */
   #rect-hotspot-layer {
@@ -260,7 +275,7 @@
   .rect-border {
     fill: none;
     stroke: var(--gold);
-    stroke-width: 1.5;
+    stroke-width: var(--rect-stroke, 1.5);
     stroke-dasharray: 6 4;
     stroke-dashoffset: 0;
     opacity: 0.7;
@@ -270,7 +285,7 @@
   .rect-hotspot-group:hover .rect-border,
   .rect-hotspot-group.active .rect-border {
     opacity: 1;
-    stroke-width: 2;
+    stroke-width: calc(var(--rect-stroke, 1.5) * 1.3);
     stroke-dasharray: none;
     animation: none;
   }
@@ -1461,119 +1476,422 @@ body.pick-mode #pick-banner { display: block; }
 <script>
 if (typeof HOTSPOTS === 'undefined') {
 // ── FALLBACK DATA (mirrors annotations.js — edit that file, not this) ──────
+// ═══════════════════════════════════════════════════════
+//  annotations.js — Heritage 360° Viewer · Content File
+//
+//  Edit this file to update all text, hotspot positions,
+//  images, and panel content without touching the viewer.
+//
+//  SITE_CONFIG  → top-bar title, panel header, meta line
+//  HOTSPOTS     → all point and inscription annotations
+// ═══════════════════════════════════════════════════════
+
+// ── Site identity ────────────────────────────────────────
 const SITE_CONFIG = {
-  siteTitle:    "St. Crispin\u2019s Basilica \u00a0\u00b7\u00a0 Digital Archive",
-  siteSubtitle: "Est. MDCCIV \u2014 Interactive Heritage Survey",
+  siteTitle:    "Humor op de muren \u00a0·\u00a0 Digital Archive",
+  siteSubtitle: "Karikaturen op de Antwerpse Academie van schone kunsten",
   panelLabel:   "Annotated Points of Interest",
-  panelHeading: "Architectural Survey",
-  panelMeta:    "12 documented features \u00b7 circa 847 CE \u2013 1882",
-  panoramaFile: "theroom.jpg",
-  defaultYaw:   0,
-  defaultPitch: 0,
-  defaultZoom:  90
+  panelHeading: "Prix de rome",
+  panelMeta:    "23 documented features \u00b7 circa 1904 – 1910",
+  panoramaFile: "theroom.jpg",   // default panorama loaded on startup
+  defaultYaw:   270,               // starting horizontal angle in degrees
+  defaultPitch: 0,               // starting vertical angle in degrees
+  defaultZoom:  90               // starting FOV in degrees (20–120)
 };
+
+// ── Annotations ──────────────────────────────────────────
+//
+//  Point hotspot fields:
+//    id       (string)   unique identifier
+//    pitch    (number)   vertical angle in degrees (+up / -down)
+//    yaw      (number)   horizontal angle in degrees
+//    title    (string)   short label shown in panel + tooltip
+//    date     (string)   date / location line
+//    image    (string)   URL or relative path for the panel thumbnail
+//    content  (string)   HTML body text (bold, em, etc. allowed)
+//    links    (string[]) optional — IDs of related hotspots shown as
+//                        clickable chips at the bottom of the panel entry
+//    zoom     (number)   optional — FOV in degrees (20–120) applied when
+//                        navigating to this hotspot; omit to use default 90°
+//
+//  Inscription hotspot — all of the above except pitch/yaw, plus:
+//    type         "inscription"
+//    corners      [[yaw,pitch], [yaw,pitch], [yaw,pitch], [yaw,pitch]]
+//                 top-left → top-right → bottom-right → bottom-left
+//                 (fly-to centre is derived automatically from corners[0] and corners[2])
+//    transcription  (string[])  one entry per line of the inscription
+//    translation    (string)    English rendering shown below transcription
+// ─────────────────────────────────────────────────────────
+
 const HOTSPOTS = [
   {
-    id: "altar-01", pitch: -12, yaw: 0,
-    title: "The High Altar", date: "Consecrated 1704",
-    image: "https://images.unsplash.com/photo-1548625149-720754952f98?w=600&q=70",
-    content: `Constructed in <strong>1704</strong> under the patronage of Cardinal Benedetto Pamphilj, this <em>Baroque</em> masterpiece features gilded <strong>gold leaf</strong> applied over hand-carved limewood. The central triptych depicts the Ascension in the Neapolitan manner, its pigments sourced from Lapis Lazuli imported via the trading routes of Venice. Restored comprehensively in <strong>1991</strong> by the Opificio delle Pietre Dure, Florence.`,
-    links: ["mosaic-apse-11", "dedication-plaque-A", "choir-stalls-08"]
+    id:    "hotspot-1774180683546",
+    title: "A1",
+    date:  "",
+    pitch: -5.2, yaw: 162,
+    zoom: 20,
+    content: `whole coly`,
   },
   {
-    id: "rose-window-02", pitch: 18, yaw: 72,
-    title: "The Rose Window", date: "c. 1788 \u00b7 Northern Transept",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=70",
-    content: `Spanning <strong>8.4 metres</strong> in diameter, this <em>Gothic Revival</em> window was commissioned following the fire of 1785. The glazier Josias Hartmann of Strasbourg employed a <strong>grisaille technique</strong> for the outer lancets whilst reserving saturated ruby and cobalt for the central mandorla. The iconographic programme follows the <em>Biblia Pauperum</em> tradition, pairing Old Testament typologies with New Testament fulfilments.`,
-    links: ["lantern-tower-09", "fresco-06", "portal-cartouche-C"]
+    id:    "A2",
+    title: "A2",
+    date:  "",
+    pitch: -4.5, yaw: 172.2,
+    zoom: 30,
+    content: ``,
   },
   {
-    id: "pulpit-03", pitch: -8, yaw: 145,
-    title: "The Hexagonal Pulpit", date: "1742 \u00b7 Attributed to G. B. Tiepolo workshop",
-    image: "https://images.unsplash.com/photo-1572896399248-b851e5558c42?w=600&q=70",
-    content: `Carved from a single block of <strong>Carrara marble</strong>, the pulpit\u2019s six panels illustrate the cardinal virtues in high relief. The <em>trompe l\u2019oeil</em> canopy above \u2014 painted, not carved \u2014 is the earliest documented use of this illusionistic device within the diocese. The wrought-iron staircase balustrade bears the cipher of <strong>Bishop Lorenzo Foscari</strong>, who funded the commission.`,
-    links: ["memorial-tablet-B", "choir-stalls-08", "sacristy-door-10"]
+    id:    "A3",
+    title: "A3",
+    date:  "",
+    pitch: -6.1, yaw: 179.6,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "crypt-04", pitch: -35, yaw: 220,
-    title: "The Crypt Entrance", date: "Pre-Romanesque \u00b7 est. 9th century",
-    image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=600&q=70",
-    content: `Descending eleven steps below the nave floor, the <strong>crypt</strong> predates the current basilica by nearly five centuries. Dendrochronological analysis of the oak lintel dates its felling to <em>circa 847 CE</em>. The space houses the reliquary of <strong>St. Crispin</strong> \u2014 a gilded silver vessel of Mosan craftsmanship \u2014 and thirty-two carved column capitals of exceptional <em>zoomorphic</em> complexity.`
+    id:    "A4",
+    title: "A4",
+    date:  "",
+    pitch: -3.4, yaw: 186.6,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "organ-05", pitch: 10, yaw: 290,
-    title: "The Grand Organ", date: "1882 \u00b7 Cavaill\u00e9-Coll, Paris",
-    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=70",
-    content: `Installed by <strong>Aristide Cavaill\u00e9-Coll</strong> in 1882, this four-manual instrument comprises <em>5,847 pipes</em> ranging from 32 feet to the delicate <strong>piccolo</strong> at one inch. The case \u2014 in gilded oak \u2014 was designed by Eug\u00e8ne Viollet-le-Duc\u2019s atelier in deliberate dialogue with the medieval choir stalls below. A full <em>mechanical restoration</em> was completed in 2018, reinstating the original unequal temperament.`
+    id:    "A5",
+    title: "A5",
+    date:  "",
+    pitch: -1.4, yaw: 196.2,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "fresco-06", pitch: 30, yaw: 335,
-    title: "Vault Frescoes", date: "1731\u20131738 \u00b7 Luca Giordano (circle of)",
-    image: "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?w=600&q=70",
-    content: `Covering <strong>1,200 square metres</strong> of groin vaulting, the fresco cycle depicts the <em>Triumph of Faith</em> in a sweeping illusionistic composition. The foreshortened figures \u2014 some measuring six metres in height \u2014 employ the <strong>sotto in s\u00f9</strong> perspective pioneered by Mantegna and perfected by Pozzo. Infrared reflectography conducted in 2020 revealed three successive compositional changes beneath the final surface.`
+    id:    "hotspot-1774181072377",
+    title: "A6",
+    date:  "",
+    pitch: -1.8, yaw: 206.8,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "baptistry-07", pitch: -20, yaw: 190,
-    title: "The Baptistry", date: "1512 \u00b7 Late Renaissance",
-    image: "https://images.unsplash.com/photo-1611348586804-61bf6c080437?w=600&q=70",
-    content: `The octagonal <strong>baptismal font</strong> of porphyry and white marble occupies a discrete <em>edicule</em> to the south of the nave. Its cover \u2014 a conical structure of gilded copper \u2014 was cast by the <strong>Della Robbia workshop</strong> and bears enamelled <em>terracotta</em> roundels of the Baptism of Christ. The mosaic pavement beneath, uncovered during restoration in 1967, preserves a <strong>Roman tessellated floor</strong> of the 2nd century CE.`
+    id:    "hotspot-1774181136312",
+    title: "A7",
+    date:  "",
+    pitch: 25.1, yaw: 190.4,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "choir-stalls-08", pitch: -15, yaw: 36,
-    title: "The Choir Stalls", date: "1658 \u00b7 Flemish Craftsmen",
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=70",
-    content: `These <strong>sixty-four misericord stalls</strong> of dark walnut were executed by a Flemish guild under the direction of master carver Pieter van den Berghe. Each misericord \u2014 the hinged ledge permitting standing clergy to lean \u2014 is carved with a unique <em>grotesque</em> or <strong>bestiary figure</strong>, including a notable pelican in piety and a green man crowned with oak leaves. The canopy tracery above employs the <em>flamboyant Gothic</em> ogee arch in its most exuberant regional expression.`
+    id:    "hotspot-1774181155649",
+    title: "A8",
+    date:  "",
+    pitch: 18.4, yaw: 193.6,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "lantern-tower-09", pitch: 55, yaw: 110,
-    title: "The Lantern Tower", date: "1623 \u00b7 Engineer: Domenico Fontana (attr.)",
-    image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&q=70",
-    content: `Rising <strong>47 metres</strong> from the crossing floor, the lantern tower admits light through sixteen arched clerestory windows of pale <em>Norman green glass</em>. Its drum is decorated with alternating pilasters of <strong>verde antico</strong> and white marble, a colour scheme consciously echoing the baptistry at Florence. The iron tie-rods installed in <strong>1889</strong> by engineer Gustave Regnault arrested an alarming eastward lean discovered during Victorian structural surveys.`
+    id:    "hotspot-1774181184098",
+    title: "A9",
+    date:  "",
+    pitch: 23.8, yaw: 197.8,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "sacristy-door-10", pitch: -5, yaw: 258,
-    title: "The Sacristy Portal", date: "c. 1490 \u00b7 Workshop of Andrea Bregno",
-    image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=600&q=70",
-    content: `This late-<em>Quattrocento</em> doorway exhibits the full repertoire of <strong>all\u2019antica</strong> ornament: egg-and-dart mouldings, acanthus friezes, and winged putti bearing the arms of the Orsini family within a laurel wreath. The door-leaves themselves, of cedar heartwood clad in <strong>repous\u00e9e bronze</strong>, depict the Life of the Virgin across eight rectangular narrative panels. A <em>cartouche</em> above the lintel bears the inscription <strong>PORTA COELI</strong> \u2014 Gate of Heaven \u2014 in incised Humanist capitals.`
+    id:    "hotspot-1774181221015",
+    title: "A10",
+    date:  "",
+    pitch: 32.4, yaw: 198.8,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "mosaic-apse-11", pitch: 8, yaw: 18,
-    title: "The Apse Mosaic", date: "Byzantine \u00b7 11th century, restored 1388",
-    image: "https://images.unsplash.com/photo-1601999109332-542b18dbec76?w=600&q=70",
-    content: `The <strong>semi-dome of the apse</strong> is lined with a <em>Byzantine</em> mosaic of extraordinary preservation, depicting Christ Pantocrator enthroned among the celestial hierarchy. Composed of over <strong>two million tesserae</strong> \u2014 of glass, gilt glass, and semi-precious stone \u2014 the work demonstrates the <em>gold ground</em> technique transmitted from Constantinople via Southern Italian workshops. A <strong>1388 restoration</strong> under Antipope Clement VII added the donor portrait in the lower right register, identifiable by anachronistic Gothic vestments.`
+    id:    "hotspot-1774181251139",
+    title: "A11",
+    date:  "",
+    pitch: 26.4, yaw: 205.6,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "treasury-grille-12", pitch: -22, yaw: 162,
-    title: "The Treasury Grille", date: "1701 \u00b7 Ironmaster Jean Tijou",
-    image: "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?w=600&q=70",
-    content: `Wrought by <strong>Jean Tijou</strong> \u2014 the Huguenot blacksmith famed for his work at Hampton Court and St Paul\u2019s Cathedral \u2014 this <em>gilded ironwork</em> screen guards the treasury entrance with a virtuosity of hammered acanthus scrolls, husks, and masks. The gilding employs <strong>fire-gilt mercury amalgam</strong>, a technique now prohibited due to toxicity; its warm lustre has not been replicated by modern electroplating. Tijou\u2019s distinctive <em>repous\u00e9e</em> panels are signed with his monogram in the lower cartouche.`
+    id:    "hotspot-1774181276113",
+    title: "A12",
+    date:  "",
+    pitch: 29.6, yaw: 209.4,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "dedication-plaque-A", type: "inscription",
-    corners: [[-18,6],[2,6],[2,-4],[-18,-4]],
-    title: "Foundation Dedication", date: "Carved 1704 \u00b7 South nave pillar",
-    image: "https://images.unsplash.com/photo-1548625149-720754952f98?w=600&q=70",
-    content: `This founding inscription records the consecration of the basilica under Cardinal Pamphilj. Cut in <em>Humanist capitals</em> into the limestone pillar face, the lettering follows the model of Roman Imperial inscriptions, each stroke chiselled at a <strong>60\u00b0 angle</strong> to maximise shadow legibility at nave height. The mason\u2019s mark \u2014 a small equilateral triangle \u2014 appears discreetly below the final line.`,
-    transcription: ["D \u00b7 O \u00b7 M","BASILICAM \u00b7 HANC \u00b7 IN \u00b7 HONOREM","SANCTI \u00b7 CRISPINI \u00b7 MARTYRIS","BENEDICTUS \u00b7 CARD \u00b7 PAMPHILIVS","A \u00b7 FUNDAMENTIS \u00b7 EREXIT","ANNO \u00b7 SALVTIS \u00b7 MDCCIV"],
-    translation: "To God, the Best and Greatest. This basilica in honour of Saint Crispin the Martyr, Cardinal Benedetto Pamphilj raised from the foundations in the year of salvation 1704."
+    id:    "hotspot-1774181399647",
+    title: "B1",
+    date:  "",
+    pitch: -6.1, yaw: 215.6,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "memorial-tablet-B", type: "inscription",
-    corners: [[148,2],[170,2],[170,-14],[148,-14]],
-    title: "Benefactors\u2019 Memorial", date: "c. 1756 \u00b7 Marble tablet, choir aisle",
-    image: "https://images.unsplash.com/photo-1572896399248-b851e5558c42?w=600&q=70",
-    content: `Commissioned by the Chapter to record major donors of the <strong>1742 choir restoration</strong>, this white Carrara tablet employs a <em>bipartite layout</em>: the upper register names the living benefactors in incised Roman capitals, while the lower commemorates the deceased in a finer, more compressed <strong>italic hand</strong>. The border of intertwined acanthus and laurel is cut in <em>bassorilievo</em> \u2014 low relief \u2014 after a design attributed to the Foscari workshop.`,
-    transcription: ["RESTAVRATIONI \u00b7 CHORI","ANNO \u00b7 MDCCXLII \u00b7 PERFECTAE","SVMPTIBVS \u00b7 FECERVNT","LAVRENTIVS \u00b7 EP \u00b7 FOSCARI","ET \u00b7 FAMILIA \u00b7 GRIMANI","NECNON \u00b7 PIIS \u00b7 MANIBVS","ANDREAE \u00b7 BARBARIGO \u00b7 CANO"],
-    translation: "To the restoration of the choir, completed in the year 1742, made at the expense of Lorenzo Bishop Foscari and the Grimani family, and likewise to the pious memory of Cantor Andrea Barbarigo."
+    id:    "hotspot-1774181421980",
+    title: "B2",
+    date:  "",
+    pitch: -8.5, yaw: 220.2,
+    zoom: 20,
+    content: ``,
   },
   {
-    id: "portal-cartouche-C", type: "inscription",
-    corners: [[-6,18],[6,18],[6,11],[-6,11]],
-    title: "Porta Coeli Cartouche", date: "c. 1490 \u00b7 Sacristy doorway lunette",
-    image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=600&q=70",
-    content: `Set within the lunette of the Sacristy Portal, this <em>cartouche</em> inscription is the most formally ambitious lettering in the basilica. The letters are <strong>gilded lead inlay</strong> set into black Belgian marble \u2014 a technique known as <em>littera plumbea</em>. Each character is individually cast and hand-fitted. The phrase references the celestial aspirations of the doorway programme, which culminates in the <strong>Assumption relief</strong> above.`,
-    transcription: ["PORTA \u00b7 COELI"],
-    translation: "Gate of Heaven"
+    id:    "hotspot-1774181447148",
+    title: "B3",
+    date:  "",
+    pitch: -7, yaw: 227,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181475873",
+    title: "B4",
+    date:  "",
+    pitch: 9.1, yaw: 220.2,
+    zoom: 30,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181530410",
+    title: "C1",
+    date:  "",
+    pitch: -10.5, yaw: 284,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181546702",
+    title: "C2",
+    date:  "",
+    pitch: -9, yaw: 291.2,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181569461",
+    title: "C3",
+    date:  "",
+    pitch: -8.3, yaw: 296,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181590951",
+    title: "C4",
+    date:  "",
+    pitch: -9.9, yaw: 301.8,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181621709",
+    title: "C5",
+    date:  "",
+    pitch: -5.5, yaw: 306,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181649218",
+    title: "C6",
+    date:  "",
+    pitch: -5.5, yaw: 310,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181681242",
+    title: "C7",
+    date:  "",
+    pitch: -6.7, yaw: 313.8,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181741443",
+    title: "D1",
+    date:  "",
+    pitch: -7.5, yaw: 319.6,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181771118",
+    title: "D2",
+    date:  "",
+    pitch: -7.6, yaw: 325.2,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181799406",
+    title: "D3",
+    date:  "",
+    pitch: -7.5, yaw: 331.8,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181825639",
+    title: "D4",
+    date:  "",
+    pitch: -9.4, yaw: 341.6,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181854226",
+    title: "D5",
+    date:  "",
+    pitch: -9.1, yaw: 352,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181883281",
+    title: "D6",
+    date:  "",
+    pitch: -7.9, yaw: 0.8,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181906301",
+    title: "D7",
+    date:  "",
+    pitch: -3.4, yaw: 18,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181946871",
+    title: "D8",
+    date:  "",
+    pitch: 13.3, yaw: 321,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774181992435",
+    title: "D9",
+    date:  "",
+    pitch: 20.1, yaw: 327.2,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182024041",
+    title: "D10",
+    date:  "",
+    pitch: 13.7, yaw: 335.4,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182075334",
+    title: "D11",
+    date:  "",
+    pitch: 20.9, yaw: 344.8,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182101476",
+    title: "D12",
+    date:  "",
+    pitch: 8.5, yaw: 357.6,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182127538",
+    title: "D13",
+    date:  "",
+    pitch: 22.4, yaw: 359.4,
+    zoom: 35,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182164347",
+    title: "D14",
+    date:  "",
+    pitch: 20.2, yaw: 18.6,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    id:    "hotspot-1774182185642",
+    title: "D15",
+    date:  "",
+    pitch: 21.7, yaw: 27.2,
+    zoom: 20,
+    content: ``,
+  },
+  {
+    type: "inscription",
+    id:    "inscription-1774182291805",
+    title: "T5 Da zal wel kunne zijn",
+    date:  "",
+    corners: [[323.34, 10.33], [331.08, 10.33], [331.08, 6.86], [323.34, 6.86]],
+    zoom: 20,
+    content: ``,
+    transcription: [
+      "Da zal wel kunne zijn"
+    ],
+    translation: "It could be like that"
+  },
+  {
+    type: "inscription",
+    id:    "inscription-1774182436495",
+    title: "T1",
+    date:  "",
+    corners: [[156.22, 11.45], [179.9, 11.45], [179.9, 8.61], [156.22, 8.61]],
+    zoom: 33,
+    content: ``,
+    transcription: [
+      "Gelukkig zijn zij die buien"
+    ],
+    translation: "Happy are those ..."
+  },
+  {
+    type: "inscription",
+    id:    "inscription-1774182579654",
+    title: "T2",
+    date:  "",
+    corners: [[156.83, 8.41], [180.58, 8.41], [180.58, 5.48], [156.83, 5.48]],
+    zoom: 33,
+    content: ``,
+    transcription: [
+
+    ],
+    translation: ""
+  },
+  {
+    type: "inscription",
+    id:    "inscription-1774182632829",
+    title: "T4",
+    date:  "",
+    corners: [[186.69, 12.78], [206.04, 12.78], [206.04, 9.76], [186.69, 9.76]],
+    zoom: 27,
+    content: ``,
+    transcription: [
+      "Jury salutam"
+    ],
+    translation: ""
+  },
+  {
+    type: "inscription",
+    id:    "inscription-1774182685391",
+    title: "T4",
+    date:  "",
+    corners: [[194.25, 9.76], [212.22, 9.76], [212.22, 6.67], [194.25, 6.67]],
+    zoom: 25,
+    content: ``,
+    transcription: [
+
+    ],
+    translation: ""
   }
 ];
 } // end fallback
@@ -2381,6 +2699,14 @@ function tick() {
 
   drawPanorama();
   updateHotspots();
+
+  // Scale inscription rect stroke width with FOV
+  const rectSvg = document.getElementById('rect-svg');
+  if (rectSvg) {
+    const rectStroke = Math.max(0.6, Math.min(1.5, (120 - fovH) / (120 - 20) * 0.9 + 0.6));
+    rectSvg.style.setProperty('--rect-stroke', rectStroke);
+  }
+
   requestAnimationFrame(tick);
 }
 
@@ -2524,6 +2850,69 @@ function updateHotspots() {
       el.style.top  = py + 'px';
       el.style.opacity       = onScreen ? '1' : '0';
       el.style.pointerEvents = onScreen ? 'all' : 'none';
+      el._screenX = x; el._screenY = py; el._onScreen = onScreen;
+    }
+  });
+
+  // ── Scale + cluster pass (point hotspots only) ───────────────
+  // Scale: fovH 20° → 1.0 (full size when zoomed in), 90° → 0.75, 120° → 0.5
+  const scale = Math.max(0.5, Math.min(1.0, 0.5 + (120 - fovH) / (120 - 20) * 0.5));
+
+  // Collect all point hotspot elements (on-screen and off) for class reset
+  const allPointEls = [];
+  HOTSPOTS.forEach(hs => {
+    if (hs.type === 'inscription') return;
+    const el = document.getElementById('hs-' + hs.id);
+    if (el) allPointEls.push(el);
+  });
+
+  // Reset all cluster classes first
+  allPointEls.forEach(el => {
+    el.classList.remove('cluster-hidden', 'cluster-rep');
+    el.style.setProperty('--hs-scale', scale);
+    const badge = el.querySelector('.hotspot-cluster-badge');
+    if (badge) badge.textContent = '';
+  });
+
+  // Collect visible point hotspots
+  const visible = [];
+  HOTSPOTS.forEach(hs => {
+    if (hs.type === 'inscription') return;
+    const el = document.getElementById('hs-' + hs.id);
+    if (!el || !el._onScreen) return;
+    visible.push({ hs, el, x: el._screenX, y: el._screenY });
+  });
+
+  // Cluster: group dots within CLUSTER_R px — active hotspot is always representative
+  const CLUSTER_R = 28;
+  const assigned = new Set();
+
+  visible.forEach((a, ai) => {
+    if (assigned.has(ai)) return;
+    assigned.add(ai);
+    const absorbed = [];
+
+    visible.forEach((b, bi) => {
+      if (bi === ai || assigned.has(bi)) return;
+      const dx = a.x - b.x, dy = a.y - b.y;
+      if (Math.sqrt(dx*dx + dy*dy) < CLUSTER_R) {
+        // If b is active, swap so b is representative
+        if (b.el.classList.contains('active') && !a.el.classList.contains('active')) {
+          absorbed.push(a);
+          assigned.add(bi);
+          // Make b the rep — recurse is complex, so just let b handle itself
+          return;
+        }
+        assigned.add(bi);
+        absorbed.push(b);
+        b.el.classList.add('cluster-hidden');
+      }
+    });
+
+    if (absorbed.length > 0) {
+      a.el.classList.add('cluster-rep');
+      const badge = a.el.querySelector('.hotspot-cluster-badge');
+      if (badge) badge.textContent = '+' + absorbed.length;
     }
   });
 }
@@ -2575,7 +2964,8 @@ function buildHotspots() {
         '<div class="hotspot-ring"></div><div class="hotspot-ring"></div>' +
         '<div class="hotspot-ring"></div><div class="hotspot-core"></div>' +
         '<div class="hotspot-num">' + (i+1) + '</div>' +
-        '<div class="hotspot-tooltip">' + hs.title + '</div>';
+        '<div class="hotspot-tooltip">' + hs.title + '</div>' +
+        '<div class="hotspot-cluster-badge"></div>';
       el.addEventListener('click', () => setActive(hs.id));
       layer.appendChild(el);
     }
