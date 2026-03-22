@@ -13,8 +13,8 @@ const SITE_CONFIG = {
   siteTitle:    "Humor op de muren \u00a0·\u00a0 Digital Archive",
   siteSubtitle: "Karikaturen op de Antwerpse Academie van schone kunsten",
   panelLabel:   "Annotated Points of Interest",
-  panelHeading: "Prix de rome",
-  panelMeta:    "23 documented features \u00b7 circa 1904 – 1910",
+  panelHeading: "Details",
+  panelMeta:    "43 features \u00b7 circa 1904 – 1910",
   panoramaFile: "theroom.jpg",   // default panorama loaded on startup
   defaultYaw:   270,               // starting horizontal angle in degrees
   defaultPitch: 0,               // starting vertical angle in degrees
