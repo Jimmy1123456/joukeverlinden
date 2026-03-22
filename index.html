@@ -237,8 +237,7 @@
 
   .hotspot:hover .hotspot-tooltip { opacity: 1; }
 
-  /* Hotspot number badge — hidden */
-  .hotspot-num { display: none; }
+  .mobile-only { display: none; }
 
   /* ── RECTANGLE HOTSPOT (inscription / text panel type) ── */
   #rect-hotspot-layer {
@@ -761,31 +760,40 @@
     #panel-header .panel-meta { display: none; }
     #panel-header .ornament { display: none; }
 
-    /* ── Hint — full-screen overlay on mobile ── */
+    .mobile-only { display: flex; }
+    span.mobile-only { display: inline; }
     #start-hint {
-      position: fixed;
-      inset: 0;
-      bottom: 0; right: 0;
-      z-index: 8000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(5,3,1,0.6);
-      padding: 16px;
+      position: fixed !important;
+      top: 0 !important; left: 0 !important;
+      right: 0 !important; bottom: 0 !important;
+      width: 100% !important; height: 100% !important;
+      z-index: 9500 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(5,3,1,0.82) !important;
+      padding: 20px !important;
     }
+    #start-hint.visible { opacity: 1 !important; pointer-events: all !important; }
     #start-hint-inner {
-      padding: 16px 16px 12px;
-      gap: 9px;
+      padding: 20px 18px 14px;
+      gap: 10px;
       max-width: 100%;
       width: 100%;
-      max-height: 90vh;
+      max-height: 88vh;
       overflow-y: auto;
     }
-    #start-hint-welcome { font-size: 15px; padding-bottom: 8px; }
-    .sh-text { font-size: 12px; line-height: 1.45; }
-    .sh-icon { font-size: 14px; }
+    #start-hint-welcome { font-size: 16px; padding-bottom: 9px; }
+    .sh-text { font-size: 13px; line-height: 1.5; }
+    .sh-icon { font-size: 15px; }
     .sh-text kbd { display: none; }
-    #start-hint-close { font-size: 10px; padding: 5px 18px; margin-top: 4px; }
+    #start-hint-close {
+      align-self: stretch;
+      text-align: center;
+      font-size: 12px;
+      padding: 8px;
+      margin-top: 6px;
+    }
   }
 
   /* ── LOADING SCREEN ── */
@@ -1051,7 +1059,7 @@
       </div>
       <div class="sh-row">
         <span class="sh-icon">⊕</span>
-        <span class="sh-text"><strong>Inzoomen</strong> — scroll of gebruik <kbd>+</kbd> / <kbd>−</kbd> om markeringen zichtbaar te maken</span>
+        <span class="sh-text"><strong>Inzoomen</strong> — scroll of gebruik <kbd>+</kbd> / <kbd>−</kbd> om markeringen zichtbaar te maken<span class="mobile-only"> · knijp met twee vingers</span></span>
       </div>
       <div class="sh-row">
         <span class="sh-icon">⌂</span>
@@ -1060,6 +1068,10 @@
       <div class="sh-row">
         <span class="sh-icon">⟳</span>
         <span class="sh-text"><strong>Rondleiding</strong> — klik <em>Rondleiding</em> bovenaan voor een automatische tour</span>
+      </div>
+      <div class="sh-row mobile-only">
+        <span class="sh-icon">☰</span>
+        <span class="sh-text"><strong>Annotaties</strong> — zie informatie per markering in het paneel onderaan</span>
       </div>
       <button id="start-hint-close">Begrepen</button>
     </div>
@@ -2767,14 +2779,23 @@ function initGL() {
 
 function uploadTexture(img) {
   if (!gl) return;
+
+  // Draw to offscreen canvas first — Firefox requires fully decoded pixels
+  // and rejects direct HTMLImageElement uploads in some configurations.
+  const oc = document.createElement('canvas');
+  oc.width  = img.naturalWidth  || img.width;
+  oc.height = img.naturalHeight || img.height;
+  const octx = oc.getContext('2d');
+  octx.drawImage(img, 0, 0);
+
   if (glTexture) gl.deleteTexture(glTexture);
   glTexture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, glTexture);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  // Upload from canvas (always works cross-browser, avoids CORS taint issues)
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, oc);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  // Mip-map for better quality when zoomed out
-  if (isPowerOf2(img.naturalWidth) && isPowerOf2(img.naturalHeight)) {
+  if (isPowerOf2(oc.width) && isPowerOf2(oc.height)) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.generateMipmap(gl.TEXTURE_2D);
   } else {
