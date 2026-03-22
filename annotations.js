@@ -10,11 +10,11 @@
 
 // ── Site identity ────────────────────────────────────────
 const SITE_CONFIG = {
-  siteTitle:    "St. Crispin's Basilica \u00a0·\u00a0 Digital Archive",
-  siteSubtitle: "Est. MDCCIV — Interactive Heritage Survey",
+  siteTitle:    "Humor op de muren \u00a0·\u00a0 Digital Archive",
+  siteSubtitle: "Karikaturen op de Antwerpse Academie van schone kunsten",
   panelLabel:   "Annotated Points of Interest",
-  panelHeading: "Architectural Survey",
-  panelMeta:    "12 documented features \u00b7 circa 847 CE – 1882",
+  panelHeading: "Prix de rome",
+  panelMeta:    "23 documented features \u00b7 circa 1904 – 1910",
   panoramaFile: "theroom.jpg",   // default panorama loaded on startup
   defaultYaw:   0,               // starting horizontal angle in degrees
   defaultPitch: 0,               // starting vertical angle in degrees
