@@ -730,7 +730,7 @@
       border-top: 1px solid var(--panel-border);
     }
     #topbar .site-subtitle { display: none; }
-    #active-indicator { display: none; }
+    #active-indicator { display: none !important; }
     #btn-load-pano, #pano-file-input, #btn-editor { display: none; }
     #editor-overlay { display: none !important; }
     #btn-toggle-panel { display: none; } /* panel always visible on mobile */
@@ -962,9 +962,9 @@
 
 <!-- Loading Screen -->
 <div id="loading">
-  <div class="loading-title">Heritage 360°</div>
+  <div class="loading-title" id="loading-title">Heritage 360°</div>
   <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-sub">Preparing the Archive…</div>
+  <div class="loading-sub">De ruimtevisualisatie wordt voorbereid…</div>
 </div>
 
 <!-- Top Bar -->
@@ -3414,11 +3414,12 @@ function init() {
     set('panel-heading', cfg.panelHeading);
     set('panel-meta',    cfg.panelMeta);
     // Welcome title: "Welkom bij <first part of siteTitle>"
+    const firstPart = cfg.siteTitle.split(/\s*[\u00b7·]\s*/)[0].trim();
     const welcomeEl = document.getElementById('start-hint-welcome');
-    if (welcomeEl && cfg.siteTitle) {
-      const firstPart = cfg.siteTitle.split(/\s*[\u00b7·]\s*/)[0].trim();
-      welcomeEl.textContent = 'Welkom bij ' + firstPart;
-    }
+    if (welcomeEl) welcomeEl.textContent = 'Welkom bij ' + firstPart;
+    // Loading screen title
+    const loadingTitle = document.getElementById('loading-title');
+    if (loadingTitle) loadingTitle.textContent = firstPart;
   }
 
   // Seed starting view from config defaults
