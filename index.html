@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Humor op de Muren - Academie Antwerpen - 360° Viewer</title>
+<title>Heritage 360° Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@
   /* ── LAYOUT ── */
   #app {
     position: fixed;
-    top: 52px; bottom: 0; left: 0; right: 0;
+    top: 52px; left: 0; right: 0;
     display: flex;
   }
 
@@ -722,7 +722,7 @@
   /* ── MOBILE ── */
   @media (max-width: 768px) {
     /* ── Layout ── */
-    #app { flex-direction: column; top: 36px; height: calc(100dvh - 36px); }
+    #app { flex-direction: column; top: 36px; }
     #divider { display: none; }
     #viewer-wrap { height: 60%; flex: none; }
     #side-panel {
@@ -3448,7 +3448,18 @@ function init() {
   });
   initGL();
   resizeCanvas();
-  window.addEventListener('resize', () => { resizeCanvas(); updateHotspots(); });
+
+  // iOS Safari fix: use visualViewport to set actual visible height,
+  // accounting for the retractable URL bar which affects position:fixed layout.
+  function applyViewportHeight() {
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.getElementById('app').style.height = (vh - (window.innerWidth <= 768 ? 36 : 52)) + 'px';
+  }
+  applyViewportHeight();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { applyViewportHeight(); resizeCanvas(); updateHotspots(); });
+  }
+  window.addEventListener('resize', () => { applyViewportHeight(); resizeCanvas(); updateHotspots(); });
   buildHotspots();
   buildPanel();
   tick();
