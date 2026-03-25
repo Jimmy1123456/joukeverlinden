@@ -25,9 +25,13 @@
     --accent-serif: 'IM Fell English', Georgia, serif;
   }
 
-  html, body {
+  html {
     height: 100%;
-    height: 100dvh; /* iOS Safari: shrinks correctly when URL bar retracts */
+    height: -webkit-fill-available; /* iOS Safari: fills actual visible area */
+  }
+  body {
+    height: 100%;
+    min-height: -webkit-fill-available;
     width: 100%;
     overflow: hidden;
     background: #0a0805;
@@ -95,7 +99,7 @@
   /* ── LAYOUT ── */
   #app {
     position: fixed;
-    top: 52px; left: 0; right: 0;
+    top: 52px; bottom: 0; left: 0; right: 0;
     display: flex;
   }
 
@@ -2839,10 +2843,12 @@ loadPanoSrc((typeof SITE_CONFIG !== 'undefined' && SITE_CONFIG.panoramaFile) || 
 
 // ── Canvas resize ────────────────────────────────────
 function resizeCanvas() {
-  // Cap DPR at 2 — mobile at 3× DPR creates huge textures that stall the GPU
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width  = canvas.offsetWidth  * dpr;
-  canvas.height = canvas.offsetHeight * dpr;
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  if (!w || !h) return; // skip if not yet laid out — prevents stretching
+  canvas.width  = w * dpr;
+  canvas.height = h * dpr;
   if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
 }
 
@@ -3332,6 +3338,11 @@ function flyTo(p, y) {
 function startAutoTour() {
   autoTour = true;
   document.getElementById('btn-autoplay').textContent = '⏹ Stop';
+  // Resume from the currently active hotspot if one is selected
+  if (activeId) {
+    const idx = HOTSPOTS.findIndex(h => h.id === activeId);
+    if (idx !== -1) autoTourIndex = idx; // runAutoTour will post-increment
+  }
   runAutoTour();
 }
 function stopAutoTour() {
@@ -3448,18 +3459,9 @@ function init() {
   });
   initGL();
   resizeCanvas();
-
-  // iOS Safari fix: use visualViewport to set actual visible height,
-  // accounting for the retractable URL bar which affects position:fixed layout.
-  function applyViewportHeight() {
-    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.getElementById('app').style.height = (vh - (window.innerWidth <= 768 ? 36 : 52)) + 'px';
-  }
-  applyViewportHeight();
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => { applyViewportHeight(); resizeCanvas(); updateHotspots(); });
-  }
-  window.addEventListener('resize', () => { applyViewportHeight(); resizeCanvas(); updateHotspots(); });
+  // Re-check after paint — iOS Safari may not have final layout at script time
+  setTimeout(() => { resizeCanvas(); updateHotspots(); }, 200);
+  window.addEventListener('resize', () => { resizeCanvas(); updateHotspots(); });
   buildHotspots();
   buildPanel();
   tick();
