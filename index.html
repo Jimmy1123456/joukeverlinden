@@ -725,8 +725,34 @@
 
   /* ── MOBILE ── */
   @media (max-width: 768px) {
-    /* ── Layout ── */
-    #app { flex-direction: column; top: 36px; }
+    /* ── iOS Safari URL bar fix ──
+       Make body a flex column so the layout fills exactly the
+       visible viewport. `svh` (small viewport height = with URL bar)
+       ensures nothing is clipped. ── */
+    html {
+      height: -webkit-fill-available;
+      height: 100svh;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: -webkit-fill-available;
+      height: 100svh;
+      overflow: hidden;
+    }
+    #topbar {
+      position: relative;
+      flex-shrink: 0;
+      height: 36px;
+      z-index: 200;
+    }
+    #app {
+      position: relative;
+      flex: 1;
+      flex-direction: column;
+      top: 0;
+      min-height: 0; /* allow flex shrink */
+    }
     #divider { display: none; }
     #viewer-wrap { height: 60%; flex: none; }
     #side-panel {
