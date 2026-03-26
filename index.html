@@ -3804,12 +3804,10 @@ init();
      原网站的 viewer 变量名请在 index.html 里搜索
      "pannellum.viewer(" 找到，把下面的 'viewer'
      替换成实际变量名（通常就是 viewer）           */
-  var CHECK_INTERVAL = setInterval(function() {
-    if (typeof viewer !== 'undefined' && viewer.isLoaded && viewer.isLoaded()) {
-      clearInterval(CHECK_INTERVAL);
-      initRegions();
-    }
-  }, 300);
+  // 直接等待 DOM 加载完成后初始化
+  window.addEventListener('load', function() {
+    setTimeout(initRegions, 2000);
+  });
 
   /* —— 把框选区域渲染到 panorama 画面上 —— */
   function initRegions() {
@@ -3894,25 +3892,16 @@ init();
   }
 
   /* —— 球面坐标转屏幕像素（Pannellum API）—— */
-  function sphereToScreen(yaw, pitch, container) {
-    /* Pannellum 提供 mouseEventToCoords 的逆函数
-       通过 viewer 内部渲染器计算投影                */
+function sphereToScreen(yawDeg, pitchDeg, container) {
     try {
-      var renderer = viewer.getRenderer ? viewer.getRenderer() : null;
-      if (!renderer) return null;
-
-      var coords = renderer.worldToScreen(
-        yaw   * Math.PI / 180,
-        pitch * Math.PI / 180
-      );
-      if (!coords) return null;
-
+      var result = projectPoint(yawDeg, pitchDeg);
+      if (!result || result.behind) return null;
       var rect = container.getBoundingClientRect();
       return {
-        x:         coords[0],
-        y:         coords[1],
-        offScreen: coords[0] < 0 || coords[0] > rect.width ||
-                   coords[1] < 0 || coords[1] > rect.height
+        x: result.x,
+        y: result.y,
+        offScreen: result.x < 0 || result.x > rect.width ||
+                   result.y < 0 || result.y > rect.height
       };
     } catch(e) { return null; }
   }
