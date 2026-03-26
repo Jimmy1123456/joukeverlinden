@@ -3860,9 +3860,7 @@ init();
 
     try {
       var c   = region.corners;
-      var p1  = viewer.mouseEventToCoords
-        ? null
-        : sphereToScreen(c.tl.yaw, c.tl.pitch, container);
+
       var p2  = sphereToScreen(c.br.yaw, c.br.pitch, container);
       var p0  = sphereToScreen(c.tl.yaw, c.tl.pitch, container);
 
