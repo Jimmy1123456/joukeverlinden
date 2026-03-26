@@ -966,6 +966,224 @@ a {
   }
 </style>
 </head>
+<style>
+/* ── 时光对比区域标签 ── */
+.time-region-label {
+  position: absolute;
+  background: transparent;
+  color: #c8a84b;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  font-family: inherit;        /* 继承原网站字体 */
+}
+
+/* ── 框选区域边框 ── */
+.time-region-box {
+  position: absolute;
+  border: 1.5px solid rgba(200, 168, 75, 0.55);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  animation: pulse-region 3s ease-in-out infinite;
+}
+
+.time-region-box:hover {
+  border-color: rgba(200, 168, 75, 0.9);
+  animation-play-state: paused;
+}
+
+@keyframes pulse-region {
+  0%, 100% { border-color: rgba(200,168,75,0.35); }
+  50%       { border-color: rgba(200,168,75,0.75); }
+}
+
+/* ── 滑条面板（弹出层）── */
+.reveal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.reveal-overlay.open { display: flex; }
+
+.reveal-card {
+  background: #111009;
+  border: 0.5px solid rgba(200,168,75,0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 700px;
+  animation: card-in 0.3s cubic-bezier(0.22,1,0.36,1);
+}
+
+@keyframes card-in {
+  from { opacity:0; transform:translateY(14px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0)    scale(1); }
+}
+
+.reveal-card-header {
+  padding: 14px 18px;
+  border-bottom: 0.5px solid rgba(200,168,75,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reveal-card-title {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(200,168,75,0.85);
+  font-family: inherit;
+}
+
+.reveal-card-close {
+  color: rgba(200,168,75,0.45);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  transition: color 0.15s;
+  font-family: sans-serif;
+}
+
+.reveal-card-close:hover { color: rgba(200,168,75,0.9); }
+
+/* ── 图像对比容器 ── */
+.reveal-compare {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  overflow: hidden;
+  background: #0a0806;
+}
+
+.reveal-compare img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.reveal-compare .img-current  { z-index: 1; }
+.reveal-compare .img-historic { z-index: 2; opacity: 0; transition: opacity 0.04s linear; }
+
+.reveal-era-badge {
+  position: absolute;
+  bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 10;
+  font-family: inherit;
+  transition: opacity 0.3s;
+}
+
+.era-now  { left:10px;  background:rgba(30,50,80,0.75);  color:rgba(180,210,255,0.85); }
+.era-then { right:10px; background:rgba(50,35,5,0.75);   color:rgba(200,168,75,0.9); opacity:0; }
+
+/* ── 滑条区 ── */
+.reveal-controls {
+  padding: 14px 18px 16px;
+  border-top: 0.5px solid rgba(200,168,75,0.1);
+}
+
+.reveal-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.reveal-slider-tag {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.tag-now  { color: rgba(150,180,220,0.65); }
+.tag-then { color: rgba(200,168,75,0.65); }
+
+input.reveal-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 2px;
+  outline: none;
+  cursor: pointer;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    rgba(200,168,75,0.8) var(--fill,0%),
+    rgba(255,255,255,0.1) var(--fill,0%)
+  );
+}
+
+input.reveal-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #c8a84b;
+  border: 2px solid #111009;
+  box-shadow: 0 0 0 1.5px rgba(200,168,75,0.4);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+input.reveal-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input.reveal-slider::-moz-range-thumb {
+  width:16px; height:16px; border-radius:50%;
+  background:#c8a84b; border:2px solid #111009; cursor:pointer;
+}
+
+.reveal-slider-hint {
+  font-size: 10px;
+  color: rgba(200,168,75,0.3);
+  letter-spacing: 0.08em;
+  text-align: center;
+  font-family: inherit;
+}
+
+.reveal-reset {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 18px 12px;
+}
+
+.reveal-reset button {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(200,168,75,0.35);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 0;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+
+.reveal-reset button:hover { color: rgba(200,168,75,0.75); }
+</style>
 <body>
 
 <!-- Loading Screen -->
@@ -3502,6 +3720,250 @@ function init() {
 }
 
 init();
+</script>
+<!-- ══════════════════════════════════════════
+     时光对比弹出面板
+     两张图的路径在下面 src= 处填入你的文件名
+     ══════════════════════════════════════════ -->
+<div class="reveal-overlay" id="revealOverlay">
+  <div class="reveal-card">
+
+    <div class="reveal-card-header">
+      <span class="reveal-card-title" id="revealTitle">Explore: 1904–1912</span>
+      <button class="reveal-card-close" onclick="closeReveal()">✕</button>
+    </div>
+
+    <div class="reveal-compare" id="revealCompare">
+      <div class="reveal-era-badge era-now">Present</div>
+      <div class="reveal-era-badge era-then" id="eraThen">c. 1904–1912</div>
+
+      <!-- ↓↓ 修改这两行的 src 为你的图片文件名 ↓↓ -->
+      <img class="img-current"  id="imgCurrent"
+           src="panorama-current.jpg" alt="Present">
+      <img class="img-historic" id="imgHistoric"
+           src="panorama-historic.jpg" alt="c. 1904–1912">
+    </div>
+
+    <div class="reveal-controls">
+      <div class="reveal-slider-row">
+        <span class="reveal-slider-tag tag-now">Now</span>
+        <input type="range" class="reveal-slider" id="revealSlider"
+               min="0" max="100" value="0"
+               oninput="updateReveal(this.value)">
+        <span class="reveal-slider-tag tag-then">Then</span>
+      </div>
+      <div class="reveal-slider-hint">drag to uncover the original</div>
+    </div>
+
+    <div class="reveal-reset">
+      <button onclick="resetReveal()">↺ reset</button>
+    </div>
+
+  </div>
+</div>
+<script>
+/* ══════════════════════════════════════════════════════
+   时光对比功能 — 核心逻辑
+   ══════════════════════════════════════════════════════ */
+(function() {
+
+  /* —— 配置：框选区域数据 ——
+     在网站编辑模式（✎ 按钮）框选出矩形后，
+     把左上角和右下角的 yaw/pitch 值填在这里。
+     可以有多个区域，每个对应一个画作位置。      */
+  var REGIONS = [
+    {
+      id: 'region-west',
+      label: 'Explore: 1904–1912',
+      /* 从编辑器里读出的坐标，先用这些占位值，
+         框选后替换成真实的 yaw/pitch             */
+      corners: {
+        tl: { yaw: -113.6, pitch:  -14.5 },   /* 左上 */
+        br: { yaw:  -57.4, pitch: 15.2 }    /* 右下 */
+      }
+    },
+    {
+      id: 'region-north',
+      label: 'Explore: 1904–1912',
+      corners: {
+        tl: { yaw: -56.7, pitch:  -13.4 },
+        br: { yaw:  -36.7, pitch: 21.2 }
+      }
+    },
+    {
+      id: 'region-east',
+      label: 'Explore: 1904–1912',
+      corners: {
+        tl: { yaw: 9.8, pitch:  25.3 },
+        br: { yaw: 46.1, pitch:  1.8 }
+      }
+    }
+  ];
+
+  /* —— 等待 Pannellum viewer 初始化完成 ——
+     原网站的 viewer 变量名请在 index.html 里搜索
+     "pannellum.viewer(" 找到，把下面的 'viewer'
+     替换成实际变量名（通常就是 viewer）           */
+  var CHECK_INTERVAL = setInterval(function() {
+    if (typeof viewer !== 'undefined' && viewer.isLoaded && viewer.isLoaded()) {
+      clearInterval(CHECK_INTERVAL);
+      initRegions();
+    }
+  }, 300);
+
+  /* —— 把框选区域渲染到 panorama 画面上 —— */
+  function initRegions() {
+    var container = viewer.getContainer
+      ? viewer.getContainer()
+      : document.getElementById('panorama') || document.querySelector('.pnlm-container');
+
+    if (!container) { console.warn('Heritage reveal: panorama container not found'); return; }
+
+    REGIONS.forEach(function(region) {
+      /* 外层 wrapper（含 label + box） */
+      var wrapper = document.createElement('div');
+      wrapper.id  = region.id + '-wrapper';
+      wrapper.style.cssText = 'position:absolute;pointer-events:none;z-index:50;';
+
+      /* 标签：位于框上方，平行于框顶线 */
+      var label = document.createElement('div');
+      label.className   = 'time-region-label';
+      label.textContent = region.label;
+      label.style.cssText = 'position:absolute;top:0;left:50%;transform:translate(-50%,-120%);';
+
+      /* 框 */
+      var box = document.createElement('div');
+      box.className       = 'time-region-box';
+      box.style.cssText   = 'position:absolute;inset:0;pointer-events:auto;';
+      box.setAttribute('role', 'button');
+      box.setAttribute('aria-label', region.label);
+      box.addEventListener('click', function() { openReveal(region); });
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(box);
+      container.appendChild(wrapper);
+
+      /* 每帧更新位置 */
+      region._el = wrapper;
+    });
+
+    /* 动画循环：把球面坐标投影成屏幕像素 */
+    function updateLoop() {
+      REGIONS.forEach(function(region) {
+        positionRegion(region, container);
+      });
+      requestAnimationFrame(updateLoop);
+    }
+    updateLoop();
+  }
+
+  /* —— 球面坐标 → 屏幕像素 —— */
+  function positionRegion(region, container) {
+    var el = region._el;
+    if (!el) return;
+
+    try {
+      var c   = region.corners;
+      var p1  = viewer.mouseEventToCoords
+        ? null
+        : sphereToScreen(c.tl.yaw, c.tl.pitch, container);
+      var p2  = sphereToScreen(c.br.yaw, c.br.pitch, container);
+      var p0  = sphereToScreen(c.tl.yaw, c.tl.pitch, container);
+
+      if (!p0 || !p2) { el.style.display = 'none'; return; }
+
+      /* 如果任一角在视野之外，隐藏 */
+      if (p0.offScreen || p2.offScreen) { el.style.display = 'none'; return; }
+
+      var left   = Math.min(p0.x, p2.x);
+      var top    = Math.min(p0.y, p2.y);
+      var width  = Math.abs(p2.x - p0.x);
+      var height = Math.abs(p2.y - p0.y);
+
+      /* 太小时隐藏，避免缩成点 */
+      if (width < 20 || height < 20) { el.style.display = 'none'; return; }
+
+      el.style.display = 'block';
+      el.style.left    = left   + 'px';
+      el.style.top     = top    + 'px';
+      el.style.width   = width  + 'px';
+      el.style.height  = height + 'px';
+    } catch(e) {
+      el.style.display = 'none';
+    }
+  }
+
+  /* —— 球面坐标转屏幕像素（Pannellum API）—— */
+  function sphereToScreen(yaw, pitch, container) {
+    /* Pannellum 提供 mouseEventToCoords 的逆函数
+       通过 viewer 内部渲染器计算投影                */
+    try {
+      var renderer = viewer.getRenderer ? viewer.getRenderer() : null;
+      if (!renderer) return null;
+
+      var coords = renderer.worldToScreen(
+        yaw   * Math.PI / 180,
+        pitch * Math.PI / 180
+      );
+      if (!coords) return null;
+
+      var rect = container.getBoundingClientRect();
+      return {
+        x:         coords[0],
+        y:         coords[1],
+        offScreen: coords[0] < 0 || coords[0] > rect.width ||
+                   coords[1] < 0 || coords[1] > rect.height
+      };
+    } catch(e) { return null; }
+  }
+
+  /* —— 打开弹出面板 —— */
+  window.openReveal = function(region) {
+    document.getElementById('revealTitle').textContent =
+      region.label || 'Explore: 1904–1912';
+    resetReveal();
+    document.getElementById('revealOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  /* —— 关闭面板 —— */
+  window.closeReveal = function() {
+    document.getElementById('revealOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  /* 点击背景关闭 */
+  document.getElementById('revealOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeReveal();
+  });
+
+  /* Esc 关闭 */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReveal();
+  });
+
+  /* —— 滑条控制透明度 —— */
+  window.updateReveal = function(value) {
+    var t       = value / 100;
+    var slider  = document.getElementById('revealSlider');
+    var historic = document.getElementById('imgHistoric');
+    var eraThen  = document.getElementById('eraThen');
+    var eraNow   = document.querySelector('.era-now');
+
+    slider.style.setProperty('--fill', (t * 100) + '%');
+    historic.style.opacity  = t;
+    eraThen.style.opacity   = t;
+    eraNow.style.opacity    = 1 - t * 0.75;
+  };
+
+  /* —— 重置 —— */
+  window.resetReveal = function() {
+    var slider = document.getElementById('revealSlider');
+    slider.value = 0;
+    updateReveal(0);
+  };
+
+})();
 </script>
 </body>
 </html>
