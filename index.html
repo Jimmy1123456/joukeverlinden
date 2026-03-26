@@ -3771,34 +3771,32 @@ init();
      在网站编辑模式（✎ 按钮）框选出矩形后，
      把左上角和右下角的 yaw/pitch 值填在这里。
      可以有多个区域，每个对应一个画作位置。      */
-  var REGIONS = [
-    {
-      id: 'region-west',
-      label: 'Explore: 1904–1912',
-      /* 从编辑器里读出的坐标，先用这些占位值，
-         框选后替换成真实的 yaw/pitch             */
-      corners: {
-        tl: { yaw: -113.6, pitch:  -14.5 },   /* 左上 */
-        br: { yaw:  -57.4, pitch: 15.2 }    /* 右下 */
-      }
-    },
-    {
-      id: 'region-north',
-      label: 'Explore: 1904–1912',
-      corners: {
-        tl: { yaw: -56.7, pitch:  -13.4 },
-        br: { yaw:  -36.7, pitch: 21.2 }
-      }
-    },
-    {
-      id: 'region-east',
-      label: 'Explore: 1904–1912',
-      corners: {
-        tl: { yaw: 9.8, pitch:  25.3 },
-        br: { yaw: 46.1, pitch:  1.8 }
-      }
+var REGIONS = [
+  {
+    id: 'region-west',
+    label: 'Explore: 1904–1912',
+    corners: {
+      tl: { yaw: 246.4, pitch: -14.5 },
+      br: { yaw: 302.6, pitch:  15.2 }
     }
-  ];
+  },
+  {
+    id: 'region-north',
+    label: 'Explore: 1904–1912',
+    corners: {
+      tl: { yaw: 303.3, pitch: -13.4 },
+      br: { yaw: 323.3, pitch:  21.2 }
+    }
+  },
+  {
+    id: 'region-east',
+    label: 'Explore: 1904–1912',
+    corners: {
+      tl: { yaw:  9.8, pitch: 25.3 },
+      br: { yaw: 46.1, pitch:  1.8 }
+    }
+  }
+];
 
   /* —— 等待 Pannellum viewer 初始化完成 ——
      原网站的 viewer 变量名请在 index.html 里搜索
