@@ -3811,9 +3811,7 @@ init();
 
   /* —— 把框选区域渲染到 panorama 画面上 —— */
   function initRegions() {
-    var container = viewer.getContainer
-      ? viewer.getContainer()
-      : document.getElementById('panorama') || document.querySelector('.pnlm-container');
+    var container = document.getElementById('viewer-wrap');
 
     if (!container) { console.warn('Heritage reveal: panorama container not found'); return; }
 
