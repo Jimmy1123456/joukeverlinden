@@ -1097,7 +1097,7 @@ a {
 }
 
 .era-now  { left:10px;  background:rgba(30,50,80,0.75);  color:rgba(180,210,255,0.85); }
-.era-then { right:10px; background:rgba(50,35,5,0.75);   color:rgba(200,168,75,0.9); opacity:0; }
+.era-Before { right:10px; background:rgba(50,35,5,0.75);   color:rgba(200,168,75,0.9); opacity:0; }
 
 /* ── 滑条区 ── */
 .reveal-controls {
@@ -1121,7 +1121,7 @@ a {
 }
 
 .tag-now  { color: rgba(150,180,220,0.65); }
-.tag-then { color: rgba(200,168,75,0.65); }
+.tag-Before { color: rgba(200,168,75,0.65); }
 
 input.reveal-slider {
   -webkit-appearance: none;
@@ -2915,7 +2915,7 @@ const VS = `
 `;
 
 // Fragment shader: for each screen pixel reconstruct a 3-D ray,
-// rotate by yaw+pitch, then sample the equirectangular texture.
+// rotate by yaw+pitch, Before sample the equirectangular texture.
 const FS = `
   precision mediump float;
   varying vec2 v_uv;
@@ -3735,7 +3735,7 @@ init();
 
     <div class="reveal-compare" id="revealCompare">
       <div class="reveal-era-badge era-now">Present</div>
-      <div class="reveal-era-badge era-then" id="eraThen">c. 1904–1912</div>
+      <div class="reveal-era-badge era-Before" id="eraBefore">c. 1904–1912</div>
 
       <!-- ↓↓ 修改这两行的 src 为你的图片文件名 ↓↓ -->
       <img class="img-current"  id="imgCurrent"
@@ -3750,7 +3750,7 @@ init();
         <input type="range" class="reveal-slider" id="revealSlider"
                min="0" max="100" value="0"
                oninput="updateReveal(this.value)">
-        <span class="reveal-slider-tag tag-then">Then</span>
+        <span class="reveal-slider-tag tag-Before">Before</span>
       </div>
       <div class="reveal-slider-hint">drag to uncover the original</div>
     </div>
@@ -3938,12 +3938,12 @@ function sphereToScreen(yawDeg, pitchDeg, container) {
     var t       = value / 100;
     var slider  = document.getElementById('revealSlider');
     var historic = document.getElementById('imgHistoric');
-    var eraThen  = document.getElementById('eraThen');
+    var eraBefore  = document.getElementById('eraBefore');
     var eraNow   = document.querySelector('.era-now');
 
     slider.style.setProperty('--fill', (t * 100) + '%');
     historic.style.opacity  = t;
-    eraThen.style.opacity   = t;
+    eraBefore.style.opacity   = t;
     eraNow.style.opacity    = 1 - t * 0.75;
   };
 
