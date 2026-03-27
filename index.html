@@ -3774,7 +3774,9 @@ init();
 var REGIONS = [
   {
     id: 'region-west',
-    label: 'Explore: 1904–1912',
+    label: "Foto's Felixarchief (ca. 1904 - vóór 1913)",
+    imgOld: 'old-1.jpg',
+    imgNew: 'new-1.jpg',
     corners: {
       tl: { yaw: 246.4, pitch: -14.5 },
       br: { yaw: 302.6, pitch:  15.2 }
@@ -3782,7 +3784,9 @@ var REGIONS = [
   },
   {
     id: 'region-north',
-    label: 'Explore: 1904–1912',
+    label: "Foto's Felixarchief (ca. 1904 - vóór 1913)",
+    imgOld: 'old-2.jpg',
+    imgNew: 'new-2.jpg',
     corners: {
       tl: { yaw: 303.3, pitch: -13.4 },
       br: { yaw: 323.3, pitch:  21.2 }
@@ -3790,10 +3794,12 @@ var REGIONS = [
   },
   {
     id: 'region-east',
-    label: 'Explore: 1904–1912',
+    label: "Foto's Felixarchief (ca. 1904 - vóór 1913)",
+    imgOld: 'old-3.jpg',
+    imgNew: 'new-3.jpg',
     corners: {
-      tl: { yaw:  11.18, pitch: 21.57 },
-      br: { yaw: 46.2, pitch:  1.65 }
+      tl: { yaw: 11.18, pitch: -21.57 },
+      br: { yaw: 46.22, pitch:   1.65 }
     }
   }
 ];
@@ -3905,6 +3911,8 @@ function sphereToScreen(yawDeg, pitchDeg, container) {
     document.getElementById('revealTitle').textContent =
       region.label || 'Explore: 1904–1912';
     resetReveal();
+    document.getElementById('imgCurrent').src  = region.imgNew || 'panorama-current.jpg';
+    document.getElementById('imgHistoric').src = region.imgOld || 'panorama-historic.jpg';
     document.getElementById('revealOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   };
