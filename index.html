@@ -3911,8 +3911,8 @@ function sphereToScreen(yawDeg, pitchDeg, container) {
     document.getElementById('revealTitle').textContent =
       region.label || 'Explore: 1904–1912';
     resetReveal();
-    document.getElementById('imgCurrent').src  = region.imgNew || 'panorama-current.jpg';
-    document.getElementById('imgHistoric').src = region.imgOld || 'panorama-historic.jpg';
+    document.getElementById('imgCurrent').src  = region.imgOld || 'panorama-current.jpg';
+    document.getElementById('imgHistoric').src = region.imgNew || 'panorama-historic.jpg';
     document.getElementById('revealOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
   };
